@@ -21,7 +21,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            messense/rust-musl-cross:x86_64-musl \
+            messense/rust-musl-cross:x86_64-musl-openssl \
             cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Upload MUSL artifact
