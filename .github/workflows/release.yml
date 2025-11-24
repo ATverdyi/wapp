@@ -6,21 +6,23 @@ on:
       - "v*.*.*"
 
 jobs:
-  # =====================
-  #  MUSL BUILD (Linux)
-  # =====================
+  # ============================
+  #  MUSL STATIC BUILD (Docker)
+  # ============================
   musl-build:
-    name: Build (Linux MUSL)
+    name: Build (Linux MUSL static)
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build MUSL binary (static, OpenSSL included)
-        uses: messense/rust-musl-cross@v1
-        with:
-          target: x86_64-unknown-linux-musl
-          args: cargo build --release --target x86_64-unknown-linux-musl
+      - name: Build MUSL binary (static)
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            messense/rust-musl-cross:x86_64-musl \
+            cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Upload MUSL artifact
         uses: actions/upload-artifact@v4
@@ -28,9 +30,9 @@ jobs:
           name: wapp-linux-musl
           path: target/x86_64-unknown-linux-musl/release/wapp
 
-  # =====================
-  #  NATIVE BUILDS (GNU/macOS/Windows)
-  # =====================
+  # ============================
+  #  NATIVE BUILDS (GNU/macOS/Win)
+  # ============================
   native-build:
     name: Build native platforms
     runs-on: ${{ matrix.os }}
@@ -94,9 +96,9 @@ jobs:
           name: ${{ matrix.artifact }}
           path: artifacts/${{ matrix.artifact }}
 
-  # =====================
-  #  RELEASE JOB
-  # =====================
+  # ============================
+  #  RELEASE
+  # ============================
   release:
     name: Publish Release
     needs:
