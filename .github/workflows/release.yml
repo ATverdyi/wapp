@@ -29,6 +29,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ------------ OPENSSL FIX ------------
+      - name: Install OpenSSL (Linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Install OpenSSL (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew update
+          brew install openssl
+          echo "OPENSSL_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+
+      - name: Install OpenSSL (Windows)
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          vcpkg install openssl:x64-windows
+          echo "OPENSSL_DIR=C:/vcpkg/installed/x64-windows" >> $env:GITHUB_ENV
+      # -------------------------------------
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
 
