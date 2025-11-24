@@ -6,30 +6,54 @@ on:
       - "v*.*.*"
 
 jobs:
-  build:
-    name: Build binaries for all platforms
+  # =====================
+  #  MUSL BUILD (Linux)
+  # =====================
+  musl-build:
+    name: Build (Linux MUSL)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build MUSL binary (static, OpenSSL included)
+        uses: messense/rust-musl-cross@v1
+        with:
+          target: x86_64-unknown-linux-musl
+          args: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Upload MUSL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wapp-linux-musl
+          path: target/x86_64-unknown-linux-musl/release/wapp
+
+  # =====================
+  #  NATIVE BUILDS (GNU/macOS/Windows)
+  # =====================
+  native-build:
+    name: Build native platforms
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            artifact: wapp-linux
+            target: x86_64-unknown-linux-gnu
+            artifact: wapp-linux-gnu
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact: wapp-macos-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact: wapp-macos-aarch64
+            artifact: wapp-macos-arm64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact: wapp-windows.exe
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ------------ OPENSSL FIX ------------
+      # ---- OPENSSL FIX ----
       - name: Install OpenSSL (Linux)
         if: startsWith(matrix.os, 'ubuntu')
         run: |
@@ -48,18 +72,14 @@ jobs:
         run: |
           vcpkg install openssl:x64-windows
           echo "OPENSSL_DIR=C:/vcpkg/installed/x64-windows" >> $env:GITHUB_ENV
-      # -------------------------------------
+      # ---------------------
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
 
-      - name: Install MUSL tools (Linux only)
-        if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
-
       - name: Build
-        run: cargo build --release --target=${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Prepare artifact
+      - name: Prepare artifacts
         run: |
           mkdir -p artifacts
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
@@ -74,9 +94,14 @@ jobs:
           name: ${{ matrix.artifact }}
           path: artifacts/${{ matrix.artifact }}
 
+  # =====================
+  #  RELEASE JOB
+  # =====================
   release:
-    name: Publish GitHub Release
-    needs: build
+    name: Publish Release
+    needs:
+      - musl-build
+      - native-build
     runs-on: ubuntu-latest
 
     steps:
@@ -85,7 +110,7 @@ jobs:
         with:
           path: release_files
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: release_files/**/*
