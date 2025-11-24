@@ -25,7 +25,7 @@ MyApp works on:
 
 Download the latest binaries from the Releases:
 
-https://github.com/<yourname>/<yourrepo>/releases
+https://github.com/ATverdyi/wapp/releases/latest/
 
 ### Linux
 
