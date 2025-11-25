@@ -37,13 +37,6 @@ impl OpenWeatherProvider {
     ///
     /// * `Result<Self>` - A new provider instance or an error if required variables are missing
     ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use your_crate::OpenWeatherProvider;
-    ///
-    /// let provider = OpenWeatherProvider::from_env()?;
-    /// ```
     pub fn from_env() -> Result<Self> {
         Ok(Self {
             api_key: env::var("OPENWEATHER_KEY")?,
@@ -79,17 +72,6 @@ impl ApiProvider for OpenWeatherProvider {
     /// * Reading the response text fails
     ///
     /// # Example
-    ///
-    /// ```no_run
-    /// use your_crate::{OpenWeatherProvider, ApiProvider};
-    ///
-    /// # async fn example() -> anyhow::Result<()> {
-    /// let provider = OpenWeatherProvider::from_env()?;
-    /// let weather = provider.get_data("London".to_string(), "now".to_string()).await?;
-    /// println!("Weather: {}", weather);
-    /// # Ok(())
-    /// # }
-    /// ```
     async fn get_data(&self, city: String, kind: String) -> Result<String> {
         // Encode city name for safe use in URL
         let city = encode(&city);
